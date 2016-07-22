@@ -1,0 +1,638 @@
+<?php
+	require(APPPATH.'plugins/libpdf/fpdf.php');
+	
+	date_default_timezone_set ('Asia/Jakarta');
+	$tanggal = date('Y-m-d');
+	$waktu = date('H:i:s');
+	
+	$pdf = new FPDF('L','cm','A4');
+	//$pdf->AddFont('Dot Matrix','','dotmatrix.php');
+	$pdf->SetTitle('Purchasing Order');
+	$pdf->SetMargins(1,1,1);
+	$pdf->SetAutoPageBreak(TRUE, 0.5);
+	$pdf->AddPage();
+	$logo = base_url('asset/images/linoti.png');
+	$pdf->Image($logo,0.9, 0.6,-350, -450);
+	$pdf->SetFont('Arial','I',7);
+	//$pdf->Cell(28, 0.1, 'Printed on '.$tanggal.' '.$waktu, 0, 1, 'R');
+	$pdf->Ln(1);
+	//$pdf->SetLineWidth(0.04);
+	//$pdf->Line(1,2.3,29,2.3);
+	//$pdf->SetLineWidth(0.01);
+	//$pdf->Line(1,2.4,29,2.4);
+	//$pdf->SetFont('Arial','',9);
+	//$pdf->Cell(32.2, 1.2,'Jepara, '.$tgl_beli, 0, 1, 'C');
+	//$pdf->Line(1,3,20,3);
+	$pdf->SetLineWidth(0.02);
+	//$pdf->Line(1,3.1,20,3.1);
+	//$pdf->Ln(0.2);
+	
+	$pdf->SetFont('Arial','B',14);
+	$pdf->Cell(28.1, 0.7,'PURCHASE ORDER KE SUPPLIERS', 1, 1, 'C');
+	
+	$pdf->SetLineWidth(0.02);
+	$pdf->Line(1,3.0,29.1,3.0); // garis horizontal atas
+	
+	$pdf->Ln(0.3);
+	$pdf->SetLineWidth(0.01);
+	//$pdf->Line(1,2.3,20,2.3);
+	$pdf->SetFont('Arial','B',8);
+	$pdf->Cell(3, 0.4,'PO Number', 0, 0, 'L');					$pdf->Cell(0.5, 0.4,':', 0, 0, 'L');		$pdf->Cell(9, 0.4,$po, 0, 0, 'L');								$pdf->Cell(7,0.4,'',0,0,'L');				$pdf->Cell(2.5, 0.4,'PI Number', 0, 0, 'L');	$pdf->Cell(0.5, 0.4,':', 0, 0, 'L');			$pdf->Cell(1, 0.4,$pi, 0, 1, 'L');
+	$pdf->Cell(3, 0.4,'Attention', 0, 0, 'L');					$pdf->Cell(0.5, 0.4,':', 0, 0, 'L');		$pdf->Cell(9, 0.4,$supplier, 0, 0, 'L');					$pdf->Cell(7,0.4,'',0,0,'L');				$pdf->Cell(2.5, 0.4,'Customer', 0, 0, 'L');		$pdf->Cell(0.5, 0.4,':', 0, 0, 'L');			$pdf->Cell(1, 0.4,$customer, 0, 1, 'L');
+	$pdf->Cell(3, 0.4,'Date of Issue', 0, 0, 'L');			$pdf->Cell(0.5, 0.4,':', 0, 0, 'L');		$pdf->Cell(9, 0.4,$tgl_beli, 0, 1, 'L');
+	$pdf->Cell(3, 0.4,'Deadline', 0, 0, 'L');						$pdf->Cell(0.5, 0.4,':', 0, 0, 'L');		$pdf->Cell(1, 0.4,$tgldeadline, 0, 1, 'L');
+	$pdf->Cell(3, 0.4,'Penalty', 0, 0, 'L');						$pdf->Cell(0.5, 0.4,':', 0, 0, 'L');		$pdf->Cell(1, 0.4,'', 0, 1, 'L');
+	
+	//$pdf->Ln(0.3);
+	$pdf->SetLineWidth(0.02);
+	//$pdf->Line(1,4.6,29,4.6);
+	$pdf->Line(1,3.0,1,5.2); // garis vertikal kiri
+	//$pdf->Line(12.3,4.4,12.3,6.6);
+	$pdf->Line(29.1,3.0,29.1,5.2); // garsi vertikal kanan
+	$pdf->Ln(0.15);
+	
+	$pdf->SetFont('Arial','B',6.5);
+	
+	$pdf->MultiCell(0.6, 1.6,'No', 1, 0, 'C',false);
+	$pdf->Cell(2, 1.6,'Code', 1, 0, 'C',false);
+	$pdf->Cell(2, 1.6,'Merk', 1, 0, 'C',false);
+	$pdf->Cell(11, 1.6,'Description', 1, 0, 'C',false);
+	$pdf->Cell(1.4, 1.6,'Qty Need', 1, 0, 'C',false);
+	$pdf->Cell(1.3, 1.6,'Stock', 1, 0, 'C',false);
+	$pdf->Cell(1.3, 1.6,'Min Qty', 1, 0, 'C',false);
+	$pdf->Cell(1.3,1.6,'Qty Order', 1, 0, 'C',false);
+	$pdf->Cell(1.7, 1.6,'Unit Net Price', 1, 0, 'C',false);
+	$pdf->Cell(2.5, 1.6,'Total Price', 1, 0, 'C',false);$startX = $pdf->getX();$startY = $pdf->getY();
+	$pdf->Cell(3, 0.8,'In', 1, 1, 'C',false);
+	
+	$pdf->setY($startY+0.8);$pdf->setX($startX);
+	$pdf->Cell(1.5, 0.8,'Date', 1, 0, 'C',false);
+	$pdf->Cell(1.5, 0.8,'Qty', 1, 1, 'C',false);
+	$total_row = $data->num_rows;
+	$count_row = 13-$total_row;
+	$ttldl = 0;
+	$ttlrp = 0;
+	$num = 1;
+	$pdf->SetFont('Arial','',6.5);
+	
+	$list_t_total = 0;
+	$list_t_counter = 0;
+	$list_t_finishing ='';
+	$list_t_unit ='';
+	$list_t_stock=0;
+	$list_t_order=0;
+	$list_t_min_qty=0;
+	$list_t_harga=0;
+	$list_t_currency='';
+	
+	$aluminium_lembaran_total = 0;
+	$aluminium_lembaran_counter = 0;
+	$aluminium_lembaran_finishing ='';
+	$aluminium_lembaran_unit ='';
+	$aluminium_lembaran_stock=0;
+	$aluminium_lembaran_order=0;
+	$aluminium_lembaran_min_qty=0;
+	$aluminium_lembaran_harga=0;
+	$aluminium_lembaran_currency='';
+	
+	$strip_plat_total = 0;
+	$strip_plat_counter = 0;
+	$strip_plat_finishing ='';
+	$strip_plat_unit ='';
+	$strip_plat_stock=0;
+	$strip_plat_order=0;
+	$strip_plat_min_qty=0;
+	$strip_plat_harga=0;
+	$strip_plat_currency='';
+		
+	if($data->num_rows>0)
+	{
+		foreach($data->result() as $dataresult)
+		{
+			$totalharga = $dataresult->hargabeli*$dataresult->qty_order;
+			if($dataresult->currency_name=='Rp') {
+				$ttlrp = $ttlrp+$totalharga;
+			}
+			else {
+				$ttldl = $ttldl+$totalharga;
+			}
+			$size ='';
+			
+			if ($dataresult->size_length > 0){
+				$whole = 0;
+				$fraction = 0.0;
+				$whole = floor($dataresult->size_length);
+				$fraction = $dataresult->size_length - $whole;
+				if ($fraction > 0){
+					$size = $size.'L '.number_format($dataresult->size_length,1,',','.').' x ';
+				} else {
+					$size = $size.'L '.number_format($dataresult->size_length,0,',','.').' x ';
+				}
+			}
+					
+			if ($dataresult->size_width > 0){
+				$whole = 0;
+				$fraction = 0.0;
+				$whole = floor($dataresult->size_width);
+				$fraction = $dataresult->size_width - $whole;
+				if ($fraction > 0){
+					$size = $size.'W '.number_format($dataresult->size_width,1,',','.').' x ';
+				} else {
+					$size = $size.'W '.number_format($dataresult->size_width,0,',','.').' x ';
+				}
+			}
+					
+			if ($dataresult->size_height > 0){
+				$whole = 0;
+				$fraction = 0.0;
+				$whole = floor($dataresult->size_height);
+				$fraction = $dataresult->size_height - $whole;
+				if ($fraction > 0){
+					$size = $size.'H '.number_format($dataresult->size_height,1,',','.').' x ';
+				} else {
+					$size = $size.'H '.number_format($dataresult->size_height,0,',','.').' x ';
+				}
+			}
+			
+			if ($size!=''){
+				$size = substr($size,0,-3);
+				if (empty($dataresult->size_length_unit)){
+					$size = $size.'; ';
+				} else {
+					$size = $size.' '.$dataresult->size_length_unit.'; ';
+				}
+			}
+			
+			if ($dataresult->size_diameter > 0){
+				$whole = 0;
+				$fraction = 0.0;
+				$whole = floor($dataresult->size_diameter);
+				$fraction = $dataresult->size_diameter - $whole;
+				if ($fraction > 0){
+					$size = $size.html_entity_decode('&#216;', ENT_XHTML,"ISO-8859-1").' out '.number_format($dataresult->size_diameter,1,',','.');
+				} else {
+					$size = $size.html_entity_decode('&#216;', ENT_XHTML,"ISO-8859-1").' out '.number_format($dataresult->size_diameter,0,',','.');
+				}
+				if (empty($dataresult->size_diameter_unit)){
+					$size = $size.'; ';
+				} else {
+					$size = $size.' '.$dataresult->size_diameter_unit.'; ';
+				}
+			}
+					
+			if ($dataresult->size_diameterin > 0){
+				$whole = 0;
+				$fraction = 0.0;
+				$whole = floor($dataresult->size_diameterin);
+				$fraction = $dataresult->size_diameterin - $whole;
+				if ($fraction > 0){
+					$size = $size.html_entity_decode('&#216;', ENT_XHTML,"ISO-8859-1").' in '.number_format($dataresult->size_diameterin,1,',','.');
+				} else {
+					$size = $size.html_entity_decode('&#216;', ENT_XHTML,"ISO-8859-1").' in '.number_format($dataresult->size_diameterin,0,',','.');
+				}
+				if (empty($dataresult->size_diameterin_unit)){
+					$size = $size.'; ';
+				} else {
+					$size = $size.' '.$dataresult->size_diameterin_unit.'; ';
+				}
+			}
+			
+			if ($dataresult->size_thread!=''){
+				$size = $size.$dataresult->size_thread.'; ';
+			}
+			
+			$tgibaris = 0.6;
+			
+			if (strlen($dataresult->nama_barang)>44){
+				$barisdes = $tgibaris;
+				$count_row = $count_row-1;
+				if (strlen($dataresult->nama_barang)>90){
+					$tgibaris = $tgibaris * 3;
+				} else {
+					$tgibaris = $tgibaris * 2;
+				}
+				
+				$barisfin = $tgibaris;
+				//$barisdes = $tgibaris;
+				$barissize = $tgibaris;
+				
+				if (strlen($dataresult->finishing) > 58 && strlen($dataresult->finishing) <= 87){
+					$tgibaris = 0.6 * 3;
+					//$barisdes = $tgibaris;
+					$barisfin = $tgibaris;
+				} else if (strlen($dataresult->finishing) > 87){
+					$tgibaris = 0.6 * 4;
+					//$barisdes = $tgibaris;
+					$barisfin = $tgibaris;
+				} else {
+					if (strlen($size) > 84 && strlen($size) <= 112){
+						$tgibaris = 0.6 * 3;
+						//$barisdes = $tgibaris;
+						$barisfin = $tgibaris;
+						$barissize = $tgibaris;
+					} elseif (strlen($size) > 112) {
+						$tgibaris = 0.6 * 4;
+						//$barisdes = $tgibaris;
+						$barisfin = $tgibaris;
+						$barissize = $tgibaris;
+					} elseif (strlen($size) > 28) {
+						$tgibaris = 0.6 * 2;
+						//$barisdes = $tgibaris;
+						$barisfin = $tgibaris;
+						$barissize = $tgibaris;
+					} 
+				}
+				
+			} else {
+				$barisfin = $tgibaris;
+				$barisdes = $tgibaris;
+				$barissize = $tgibaris;
+				if (strlen($dataresult->finishing) > 23 && strlen($dataresult->finishing) <= 58){
+					$tgibaris = $tgibaris * 2;
+					$barisfin = 0.6;
+					$barissize = $tgibaris;
+				} else if (strlen($dataresult->finishing) > 58){
+					$tgibaris = $tgibaris * 3;
+					$barisfin = 0.6;
+					$barissize = $tgibaris;
+				} else {
+					if (strlen($size) > 84 && strlen($size) <= 112){
+						$tgibaris = 0.6 * 3;
+						$barisdes = $tgibaris;
+						$barisfin = $tgibaris;
+						$barissize = 0.6;
+					} elseif (strlen($size) > 112) {
+						$tgibaris = 0.6 * 4;
+						$barisdes = $tgibaris;
+						$barisfin = $tgibaris;
+						$barissize = 0.6;
+					} elseif (strlen($size) > 29) {
+						$tgibaris = 0.6 * 2;
+						$barisdes = $tgibaris;
+						$barisfin = $tgibaris;
+						$barissize = 0.6;
+					}
+				}
+				$barisdes = $tgibaris;
+				
+				
+			}
+			
+			$pdf->Cell(0.6, $tgibaris, $num, 1, 0, 'C'); 										// No
+			if (empty($dataresult->kode_barang_spc)){
+				$pdf->Cell(2, $tgibaris,'-', 1, 0, 'L');													// Code empty
+			} else {
+				$pdf->Cell(2, $tgibaris,$dataresult->kode_barang_spc, 1, 0, 'L');	// Code
+			}
+			
+			if (empty($dataresult->merk)){
+				$pdf->Cell(2, $tgibaris,'-', 1, 0, 'L');													// Merk empty
+			} else {
+				$pdf->Cell(2, $tgibaris,$dataresult->merk, 1, 0, 'L');						// Merk
+			} 
+					
+			$pdf->MultiCell(5, $barisdes, $dataresult->nama_barang, 1, 0, 'L',false);	// Desciption Name
+			
+			if (strpos(strtolower($dataresult->nama_barang),'aluminium lembaran') !== false){
+				$aluminium_lembaran_total = $aluminium_lembaran_total + $dataresult->jmlbeli;
+				$aluminium_lembaran_unit = $dataresult->unit_name;
+				$aluminium_lembaran_finishing = $dataresult->finishing;
+				$aluminium_lembaran_min_qty = $dataresult->min_qty;
+				$aluminium_lembaran_stock = $dataresult->temp_stock;
+				$aluminium_lembaran_order = $dataresult->qty_order;
+				$aluminium_lembaran_harga = $dataresult->hargabeli;
+				$aluminium_lembaran_currency = $dataresult->currency_name;
+				$aluminium_lembaran_counter++;
+			} else if (strpos(strtolower($dataresult->nama_barang),'lis t') !== false) {
+				$list_t_total = $list_t_total + $dataresult->jmlbeli;
+				$list_t_unit = $dataresult->unit_name;
+				$list_t_finishing = $dataresult->finishing;
+				$list_t_min_qty = $dataresult->min_qty;
+				$list_t_stock = $dataresult->temp_stock;
+				$list_t_order = $dataresult->qty_order;
+				$list_t_harga = $dataresult->hargabeli;
+				$list_t_currency = $dataresult->currency_name;
+				$list_t_counter++;
+			}else if(strpos(strtolower($dataresult->nama_barang),'strip plat') !== false){
+				$strip_plat_total = $strip_plat_total + $dataresult->jmlbeli;
+				$strip_plat_unit = $dataresult->unit_name;
+				$strip_plat_finishing = $dataresult->finishing;
+				$strip_plat_min_qty = $dataresult->min_qty;
+				$strip_plat_stock = $dataresult->temp_stock;
+				$strip_plat_order = $dataresult->qty_order;
+				$strip_plat_harga = $dataresult->hargabeli;
+				$strip_plat_currency = $dataresult->currency_name;
+				$strip_plat_counter++;
+			}
+			
+			if ($size==''){
+				$pdf->MultiCell(3.5, $barissize, '-', 1, 0, 'L', false);								// Desciption size empty
+			} else {
+				$pdf->MultiCell(3.5, $barissize, urldecode($size), 1, 0, 'L', false);		// Desciption size
+			}
+			if (empty($dataresult->finishing)){
+				$pdf->MultiCell(2.5, $barisfin, '-', 1, 0, 'L', false);											// Desciption finishing empty
+			} else {
+				$pdf->MultiCell(2.5, $barisfin, $dataresult->finishing, 1, 0, 'L', false);	// Desciption finishing
+			}
+			if ($po=='LI-PI12160512-MB-2016.06.002' && strpos($dataresult->nama_barang,'Paku Logo') !== false){
+			//if ($dataresult->jmlbeli > 0){
+			//}else{
+				$pdf->SetFont('Arial','I',6.5);
+			}
+				$pdf->Cell(1.4, $tgibaris, $dataresult->jmlbeli.' '.$dataresult->useper, 1, 0, 'C');		// Qty Need
+			
+			//} else {
+			//	$pdf->Cell(1.3, $tgibaris, $dataresult->jmlbeli, 1, 0, 'C');		// Qty Need
+			//}
+			//if ($dataresult->temp_stock==0){
+			//	$pdf->Cell(1.3, $tgibaris, '', 1, 0, 'C');												// Stock
+			//} else {
+				$pdf->Cell(1.3, $tgibaris, number_format($dataresult->temp_stock, 0, ',','.').' '.$dataresult->useper, 1, 0, 'C');												// Stock
+			//}
+			if ($po=='LI-PI12160512-MB-2016.06.002' && strpos($dataresult->nama_barang,'Paku Logo') !== false){
+				$pdf->SetFont('Arial','',6.5);
+			}
+			if ($dataresult->min_qty==0){
+				$pdf->Cell(1.3, $tgibaris, ' '.$dataresult->unit_name, 1, 0, 'C');																									// Min Qty 
+			} else { 
+				$pdf->Cell(1.3, $tgibaris, number_format($dataresult->min_qty, 0, ',','.').' '.$dataresult->unit_name, 1, 0, 'C');	// Min Qty
+			}
+			if ($dataresult->qty_order==0){
+				$pdf->Cell(1.3, $tgibaris, '', 1, 0, 'C'); 										 // Qty Order
+			} else {
+				$pdf->Cell(1.3, $tgibaris, number_format($dataresult->qty_order, 0, ',','.').' '.$dataresult->unit_name, 1, 0, 'C'); // Qty Order
+			}
+			
+			$pdf->Cell(0.2, $tgibaris, $dataresult->currency_name, 'TLB', 0, 'L'); 
+			if($dataresult->currency_name=='Rp'){ 
+				if ($dataresult->hargabeli > 0){
+					$pdf->Cell(1.5, $tgibaris, number_format($dataresult->hargabeli, 0,',','.'), 'TRB', 0, 'R');		// Unit Price Rp
+				} else {
+					$pdf->Cell(1.5, $tgibaris, '-', 'TRB', 0, 'R');																									// Unit Price Rp empty
+				}
+			}else{
+			  if ($dataresult->hargabeli > 0){
+					$whole = 0;
+					$fraction = 0.0; 
+					$fraction_str='';
+					$whole = floor ($dataresult->hargabeli);
+					$fraction = $dataresult->hargabeli - $whole;
+					$fraction_str = ''.number_format($dataresult->hargabeli, 3,',','.');
+					if ($fraction > 0){
+						if(substr($fraction_str,-1)!='0'){
+							$pdf->Cell(1.5, $tgibaris, number_format($dataresult->hargabeli, 3,',','.'), 'TRB', 0, 'R');		// Unit Price $
+						} elseif(substr($fraction_str,-2,1)!='0'){
+							$pdf->Cell(1.5, $tgibaris, number_format($dataresult->hargabeli, 2,',','.'), 'TRB', 0, 'R');		// Unit Price $
+						} else {
+							$pdf->Cell(1.5, $tgibaris, number_format($dataresult->hargabeli, 1,',','.'), 'TRB', 0, 'R');		// Unit Price $
+						}
+					} else {
+						$pdf->Cell(1.5, $tgibaris, number_format($dataresult->hargabeli, 0,',','.'), 'TRB', 0, 'R');			// Unit Price $
+					}
+				} else {
+					$pdf->Cell(1.5, $tgibaris, '-', 'TRB', 0, 'R');		// Unit Price $
+				}
+			} 
+			$pdf->Cell(0.5, $tgibaris, $dataresult->currency_name, 'TLB', 0, 'L'); 
+			//if ($totalharga>0){
+				if ($dataresult->currency_name=='Rp'){
+					if ($totalharga > 0){
+					$pdf->Cell(2, $tgibaris, number_format($totalharga, 0,',','.'), 'TRB', 0, 'R');		// Total Price Rp
+					} else {
+					$pdf->Cell(2, $tgibaris, '-', 'TRB', 0, 'R');		// Total Price Rp
+					}
+				} else {
+					if ($totalharga > 0){
+						$whole = 0;
+						$fraction = 0.0; 
+						$fraction_str='';
+						$whole = floor ($totalharga);
+						$fraction = $totalharga - $whole;
+						$fraction_str = ''.number_format($totalharga, 3, ',','.');
+						if ($fraction > 0){
+							if (substr($fraction_str,-1)!='0'){
+								$pdf->Cell(2, $tgibaris, number_format($totalharga, 3,',','.'), 'TRB', 0, 'R');		// Total Price $
+							} elseif (substr($fraction_str,-2,1)!='0') {
+								$pdf->Cell(2, $tgibaris, number_format($totalharga, 2,',','.'), 'TRB', 0, 'R');		// Total Price $
+							} else {
+								$pdf->Cell(2, $tgibaris, number_format($totalharga, 1,',','.'), 'TRB', 0, 'R');		// Total Price $
+							}
+						} else {
+							$pdf->Cell(2, $tgibaris, number_format($totalharga, 0,',','.'), 'TRB', 0, 'R');		// Total Price $
+						}
+					} else {
+						$pdf->Cell(2, $tgibaris, '-', 'TRB', 0, 'R');		// Total Price 0
+					}
+				}
+			//} else {
+			//	$pdf->Cell(1.5, $tgibaris, '-', 'TRB', 0, 'R');		// Total Price 0
+			//}
+			$pdf->Cell(1.5, $tgibaris, '', 1, 0, 'L');
+			$pdf->Cell(1.5, $tgibaris, '', 1, 1, 'L');
+			$num++;
+			$matauang = $dataresult->currency_name;
+		}
+		for($a=1; $a<=$count_row; $a++)
+		{
+			if ($a==$count_row){
+				$pdf->Cell(0.6, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(2, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(2, 0.6,'', 1, 0, 'C');
+				if ($aluminium_lembaran_counter > 1){
+					$pdf->Cell(5, 0.6,'Total Aluminium Lembaran', 1, 0, 'L');
+					$pdf->Cell(3.5, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(2.5, 0.6,$aluminium_lembaran_finishing, 1, 0, 'L');
+					$pdf->Cell(1.4, 0.6,$aluminium_lembaran_total.' '.$aluminium_lembaran_unit, 1, 0, 'C');
+					$pdf->Cell(1.3, 0.6,$aluminium_lembaran_stock.' '.$aluminium_lembaran_unit, 1, 0, 'C');
+					$pdf->Cell(1.3, 0.6,$aluminium_lembaran_min_qty.' '.$aluminium_lembaran_unit, 1, 0, 'C');
+					$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(0.2, 0.6,$aluminium_lembaran_currency, 'TLB', 0, 'L');
+					$pdf->Cell(1.5, 0.6,number_format($aluminium_lembaran_harga, 0,',','.'), 'TRB', 0, 'R');
+				} else if ($strip_plat_counter > 1 ){
+					$pdf->Cell(5, 0.6,'Total Strip Plat', 1, 0, 'L');
+					$pdf->Cell(3.5, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(2.5, 0.6,$strip_plat_finishing, 1, 0, 'L');
+					$pdf->Cell(1.4, 0.6,$strip_plat_total.' '.$strip_plat_unit, 1, 0, 'C');
+					$pdf->Cell(1.3, 0.6,$strip_plat_stock.' '.$strip_plat_unit, 1, 0, 'C');
+					$pdf->Cell(1.3, 0.6,$strip_plat_min_qty.' '.$strip_plat_unit, 1, 0, 'C');
+					$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(0.2, 0.6,$strip_plat_currency, 'TLB', 0, 'L');
+					$pdf->Cell(1.5, 0.6,number_format($strip_plat_harga,0,',','.'), 'TRB', 0, 'R');
+				} else if ($list_t_counter > 1){
+					$pdf->Cell(5, 0.6,'Total List T', 1, 0, 'L');
+					$pdf->Cell(3.5, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(2.5, 0.6,$list_t_finishing, 1, 0, 'L');
+					$pdf->Cell(1.4, 0.6,$list_t_total.' '.$list_t_unit, 1, 0, 'C');
+					$pdf->Cell(1.3, 0.6,$list_t_stock.' '.$list_t_unit, 1, 0, 'C');
+					$pdf->Cell(1.3, 0.6,$list_t_min_qty.' '.$list_t_unit, 1, 0, 'C');
+					$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(0.2, 0.6,$list_t_currency, 'TLB', 0, 'L');
+					$pdf->Cell(1.5, 0.6,number_format($list_t_harga,0,',','.'), 'TRB', 0, 'R');
+				} else {
+					$pdf->Cell(5, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(3.5, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(2.5, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(1.4, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+					$pdf->Cell(1.7, 0.6,'', 1, 0, 'C');
+				}
+				$pdf->Cell(2.5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.5, 0.6,'', 1, 1, 'C');
+			} else {
+				$pdf->Cell(0.6, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(2, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(2, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(3.5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(2.5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.4, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.7, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(2.5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.5, 0.6,'', 1, 1, 'C');
+			}
+		}
+		
+		if ($total_row > 13){
+			$pdf->Cell(0.6, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(2, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(2, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(5, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(3.5, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(2.5, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(1.7, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(2.5, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(1.5, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(1.5, 0.6,'', 1, 1, 'C');
+			
+			$pdf->Cell(0.6, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(2, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(2, 0.6,'', 1, 0, 'C');
+			if ($aluminium_lembaran_counter > 1){
+				$pdf->Cell(5, 0.6,'Total Aluminium Lembaran', 1, 0, 'L');
+				$pdf->Cell(3.5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(2.5, 0.6,$aluminium_lembaran_finishing, 1, 0, 'L');
+				$pdf->Cell(1.4, 0.6,$aluminium_lembaran_total.' '.$aluminium_lembaran_unit, 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,$aluminium_lembaran_stock.' '.$aluminium_lembaran_unit, 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,$aluminium_lembaran_min_qty.' '.$aluminium_lembaran_unit, 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(0.2, 0.6,$aluminium_lembaran_currency, 'TLB', 0, 'L');
+				$pdf->Cell(1.5, 0.6,number_format($aluminium_lembaran_harga, 0,',','.'), 'TRB', 0, 'R');
+			} else if ($strip_plat_counter > 1 ){
+				$pdf->Cell(5, 0.6,'Total Strip Plat', 1, 0, 'L');
+				$pdf->Cell(3.5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(2.5, 0.6,$strip_plat_finishing, 1, 0, 'L');
+				$pdf->Cell(1.4, 0.6,$strip_plat_total.' '.$strip_plat_unit, 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,$strip_plat_stock.' '.$strip_plat_unit, 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,$strip_plat_min_qty.' '.$strip_plat_unit, 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(0.2, 0.6,$strip_plat_currency, 'TLB', 0, 'L');
+				$pdf->Cell(1.5, 0.6,number_format($strip_plat_harga,0,',','.'), 'TRB', 0, 'R');
+			} else if ($list_t_counter > 1){
+				$pdf->Cell(5, 0.6,'Total List T', 1, 0, 'L');
+				$pdf->Cell(3.5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(2.5, 0.6,$list_t_finishing, 1, 0, 'L');
+				$pdf->Cell(1.4, 0.6,$list_t_total.' '.$list_t_unit, 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,$list_t_stock.' '.$list_t_unit, 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,$list_t_min_qty.' '.$list_t_unit, 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(0.2, 0.6,$list_t_currency, 'TLB', 0, 'L');
+				$pdf->Cell(1.5, 0.6,number_format($list_t_harga,0,',','.'), 'TRB', 0, 'R');
+			} else {
+				$pdf->Cell(5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(3.5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(2.5, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.4, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.3, 0.6,'', 1, 0, 'C');
+				$pdf->Cell(1.7, 0.6,'', 1, 0, 'C');
+			}
+			$pdf->Cell(2.5, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(1.5, 0.6,'', 1, 0, 'C');
+			$pdf->Cell(1.5, 0.6,'', 1, 1, 'C');
+		}
+	}
+	else
+	{
+		$ttlrp=0;
+		$ttldl=0;
+	}
+	
+	$pdf->SetFont('Arial','B',6.5);
+	$pdf->Cell(20.9, 0.6,'', '', 0, 'R');
+	$pdf->Cell(1.7, 0.6,'Total Price', 1, 0, 'L');
+	$pdf->Cell(0.5, 0.6,'Rp', 'LTB', 0, 'L');
+	if ($ttlrp > 0){
+		$pdf->Cell(2, 0.6, number_format($ttlrp, 0,',','.'), 'TRB', 1, 'R');
+	} else {
+		$pdf->Cell(2, 0.6, '-', 'TRB', 1, 'R');
+	}
+	//$pdf->Cell(3, 0.6,'', 1, 1, 'C');
+	if ($ttldl>0){
+		$pdf->Cell(20.9, 0.6,'', '', 0, 'R');
+		$pdf->Cell(1.5, 0.6,'Total Price', 1, 0, 'L');
+		$pdf->Cell(0.5, 0.6,'$', 'LTB', 0, 'L');
+		$whole = 0;
+		$fraction = 0.0; 
+		$fraction_str='';
+		$whole = floor ($ttldl);
+		$fraction = $ttldl - $whole;
+		$fraction_str = ''.number_format($ttldl, 3,',','.');
+		if ($fraction > 0){
+			if (substr($fraction_str,-1)!='0'){
+				$pdf->Cell(2, 0.6, number_format($ttldl, 3,',','.'), 'TRB', 1, 'R');
+			} elseif (substr($fraction_str,-2,1)!='0'){
+				$pdf->Cell(2, 0.6, number_format($ttldl, 2,',','.'), 'TRB', 1, 'R');
+			} else {
+				$pdf->Cell(2, 0.6, number_format($ttldl, 1,',','.'), 'TRB', 1, 'R');
+			}
+		} else {
+			$pdf->Cell(2, 0.6, number_format($ttldl, 0,',','.'), 'TRB', 1, 'R');
+		}
+	}
+	$pdf->Cell(20.9, 0.6,'', '', 0, 'R');
+	$pdf->Cell(1.7, 0.6,'', 1, 0, 'C');
+	$pdf->Cell(1, 0.6,'', 'LTB', 0, 'L');
+	$pdf->Cell(1.5, 0.6, '', 'TRB', 1, 'R');
+	$pdf->Cell(20.9, 0.6,'', '', 0, 'R');
+	$pdf->Cell(1.7, 0.6,'', 1, 0, 'C');
+	$pdf->Cell(1, 0.6,'', 'LTB', 0, 'L');
+	$pdf->Cell(1.5, 0.6, '', 'TRB', 1, 'R');
+	$pdf->Cell(19, 0.6,'THANK YOU FOR YOUR COOPERATION', 0, 0, 'L');
+	$pdf->Cell(7, 0.6,'', 0, 0, 'L');
+	$pdf->Cell(1.5, 0.6,'Director', 0, 1, 'C');
+	
+	$pdf->Cell(19, 0.5,'', 0, 1, 'L');
+	$pdf->Cell(19, 0.5,'', 0, 1, 'L');
+	$pdf->Cell(19, 0.5,'LINOTI', 0, 1, 'L');
+	$pdf->Cell(19, 0.5,'Factory :', 0, 0, 'L');
+	$pdf->Cell(7, 0.5,'', 0, 0, 'L');
+	$pdf->SetFont('Arial','UB',6.5);
+	$pdf->Cell(1.5, 0.5,'S.A', 0, 1, 'C');
+	$pdf->SetFont('Arial','B',6.5);
+	$pdf->Cell(19, 0.5,"Jl. Sunan Mantingan No. 19 Rt 02 Rw 03 Dema'an Jepara 59419 Central Java - Indonesia", 0, 1, 'L');
+	$pdf->Cell(19, 0.5,"Phone : +62 291 5752560 Fax : +62 291 591790 email : info@linoti.com", 0, 1, 'L');
+	$pdf->Cell(19, 0.5,"http://www.linoti.com", 0, 1, 'L');
+	
+	if ($saveas=='saveas'){
+		$filename = 'asset/po/'.$supplier.'/'.$po.'_'.$tanggal.'.pdf';
+		$pdf->Output($filename, 'G');
+	} else {
+		$pdf->Output('Purchase Order - '.$po, 'I');
+	}
+	
+	//$pdf->Output('Purchase Order - '.$po, 'I');
+	//$pdf->Output($filename, 'G');
+?>

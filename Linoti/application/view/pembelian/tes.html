@@ -1,0 +1,14 @@
+<form>
+<select name="sel1" onChange="populateField(this.form)" >
+    <option value="">---Select---</option>
+    <option value="stop" >Stop</option>
+    <option value="start">Start</option>
+</select>
+<input type="text" id="eStop" name="eStop" />
+</form>
+<script type="text/javascript">
+function populateField(frm){
+ var test = frm.sel1.value;
+ frm.eStop.value = test;
+}
+</script>
