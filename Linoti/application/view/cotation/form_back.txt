@@ -1,0 +1,295 @@
+$(document).ready(function(){
+	$(':input:not([type="submit"])').each(function() {
+		$(this).focus(function() {
+			$(this).addClass('hilite');
+		}).blur(function() {
+			$(this).removeClass('hilite');});
+	});
+	
+	tampil_data();
+	
+	function tampil_data(){
+		var kode = $("#kode_cotation").val();
+		$.ajax({
+			type	: 'POST',
+			url		: "<?php echo site_url(); ?>/cotation/DataDetail",
+			data	: "kode="+kode,
+			cache	: false,
+			success	: function(data){
+				$("#tampil_data").html(data);
+			}
+		});
+	}
+	
+	
+	$("#kode_cotation").keyup(function(e){
+		var isi = $(e.target).val();
+		$(e.target).val(isi.toUpperCase());
+	});
+	
+	$('#departemen  > input.ui-autocomplete-input ').css('width','100%');
+	$("#price").attr("readonly","true");
+	$("#supplier").attr("readonly","true");
+	
+	if ($("#status").val()=='2'){
+		$("#kode_cotation").attr("readonly","true");
+	}
+	else {
+		$("#kode_cotation").removeAttr("readonly");
+	}
+	
+	$("#tgl").datepicker({
+			dateFormat:"dd-mm-yy"
+    });
+	
+	$("#stok_awal").keypress(function(data){
+		if (data.which!=8 && data.which!=0 && (data.which<48 || data.which>57)) {
+			return false;
+		}
+	});
+	
+	$("#density_unit").each(function(){
+      if($(this).val() == "")
+         $(this).remove();
+     });
+
+	
+	$("#family").combobox().next().children(":text").blur(function(){
+    var nValue = $('#family').val();
+		var url1 = '<?php echo site_url(); ?>/ref_json/DataMaterial1/';
+		var url2 = '<?php echo site_url(); ?>/ref_json/DataFamily/';
+		var furl = '';
+		var murl = '';
+		if (nValue!='' && nValue!=null){
+			furl = url1+nValue;
+			murl = url2;
+		}
+		else{
+			furl = url1;
+			murl = url2;
+		}
+		
+		$('#material').combobox('reload',furl);
+		$('#family').combobox('reload',murl);
+	}); 
+	
+	//$("#family").combobox().parent().find("input.ui-autocomplete-input").text().css('padding-left', '20px');
+	
+	$('#material').change(function(){
+		CariFamily();
+	});
+	/*
+	$('#family').combobox({
+		filter: function(q, row){
+			var opts = $(this).combobox('options');
+			//return row[opts.textField].indexOf(q) == 0;
+			return row.text.toLowerCase().indexOf(q.toLowerCase())==0;
+		}
+	});
+	*/
+	function CariFamily(){
+		var kode = $('#material').val();
+		$.ajax({
+			type	: 'POST',
+			url		: "<?php echo site_url(); ?>/ref_json/DataMaterial",
+			data	: "kode="+kode,
+			cache	: false,
+			dataType : "json",
+			success	: function(data){
+				$("#family").val(family);
+			}
+		});
+	}
+	
+	$("#simpan").click(function(){
+		var data 		= new FormData($('#data')[0]);
+		var kode_cotation	= $("#kode_cotation").val();
+		var nama_brg	= $("#nama_brg").val();
+		var departemen	= $("#departemen").val();
+		
+		var string = $("#data").serialize();
+		
+		data.append("kode_cotation",  $("#kode_cotation").val());
+		data.append("nama_brg",  $("#nama_brg").val());
+		data.append("nama_brg_en",  $("#nama_brg_en").val());
+		data.append("foto_brg",  $("#foto_brg").val());
+		data.append("family",  $("#family").val());
+		data.append("merek",  $("#merek").val());
+		data.append("jenis",  $("#jenis").val());
+		data.append("detail",  $("#detail").val());
+		data.append("satuan",  $("#satuan").val());
+		data.append("size",  $("#size").val());
+		data.append("berat",  $("#berat").val());
+		data.append("material",  $("#material").val());
+		data.append("finishing",  $("#finishing").val());
+		
+		if(kode_cotation.length==0){
+			$.messager.show({
+				title:'Info',
+				msg:'Maaf, Kode Barang tidak boleh kosong', 
+				timeout:2000,
+				showType:'show'
+			});
+			$("#kode_cotation").focus();
+			return false();
+		}
+		if(nama_brg.length==0 && nama_brg_en.length==0){
+			$.messager.show({
+				title:'Info',
+				msg:'Maaf, Name / Nama Barang tidak boleh kosong keduanya', 
+				timeout:2000,
+				showType:'show'
+			});
+			$("#nama_brg").focus();
+			return false();
+		}
+		
+		$.ajax({
+			type	: 'POST',
+			url		: "<?php echo site_url(); ?>/barang/simpan",
+			data	: data,
+			cache	: false,
+			processData: false,  // tell jQuery not to process the data
+			contentType: false,   // tell jQuery not to set contentType
+			success	: function(data){
+				$.messager.show({
+					title:'Info',
+					msg:data, 
+					timeout:2000,
+					showType:'slide'
+				});
+				CariSimpanan();
+			},
+			error : function(xhr, teksStatus, kesalahan) {
+				$.messager.show({
+					title:'Info',
+					msg: 'Server tidak merespon :'+kesalahan,
+					timeout:2000,
+					showType:'slide'
+				});
+			}
+		});
+		
+		return false();		
+	});
+	
+	
+	
+});	
+
+
+<form name="data" id="data">
+<table width="100%">
+	<tr>
+		<td valign="top" width="50%">
+			<fieldset class="atas">
+			<table width="100%" border="0">
+				<tr>    
+					<td width="<?=$widthlabelleft?>">Code</td>
+					<td width="<?=$widthdoubledot?>">:</td>
+					<td width="<?=$widthinputleft?>"><input type="text" name="kode_cotation" id="kode_cotation" size="20"  class="easyui-validatebox" data-options="required:true" value="<?=$kode_cotation?>"/><input type="hidden" name="status" id="status" value="<?=$status?>" /></td>
+					<td width="<?=$widthlabelcenter?>">Departement</td>
+					<td width="<?=$widthdoubledot?>">:</td>
+					<td width="<?=$widthinputright?>">
+						<select class="easyui-combobox" data-options="required:true" id="departemen" name="departemen" style="width:180px">
+								<?php
+									foreach($l_dept->result() as $dept) {
+										if ($departemen==$dept->dept_code OR $dept->dept_code=='UPHOLD'){
+								?>
+							<option value="<?=$dept->dept_code?>" selected="selected"> <?=$dept->dept_name?></option>
+								<?php } else{ ?>
+							<option value="<?=$dept->dept_code?>"> <?=$dept->dept_name?></option>
+								<?php
+									}
+									}
+								?>
+						</select>
+					</td>
+					<td></td>
+				</tr>
+				<tr>    
+					<td width="<?=$widthlabelleft?>">Collection</td>
+					<td width="<?=$widthdoubledot?>">:</td>
+					<td width="<?=$widthinputleft?>"><input type="text" name="collection" id="collection" size="50" class="easyui-validatebox" data-options="required:true" value="<?=$collection?>"/></td>   
+					<td width="<?=$widthlabelcenter?>">Name</td>
+					<td width="<?=$widthdoubledot?>">:</td>
+					<td width="<?=$widthinputright?>"><input type="text" name="produk" id="produk" size="50" class="easyui-validatebox" data-options="required:true" value="<?=$produk?>" /></td>
+				</tr>
+				<tr>
+					<td width="<?=$widthlabelleft?>">Date</td>
+					<td width="<?=$widthdoubledot?>">:</td>
+					<td width="<?=$widthinputleft?>"><input type="text" name="tgl" id="tgl" class="easyui-validatebox" size="15" data-options="required:true" value="<?=$tgl?>"/></td> 
+					<td width="<?=$widthlabelcenter?>">Remarks</td>
+					<td width="<?=$widthdoubledot?>">:</td>
+					<td width="<?=$widthinputcenter?>"><input type="text" name="remarks" id="remarks" size="50" class="easyui-validatebox" value="<?=$remarks?>"/></td> 
+				</tr>
+			</table>
+			</fieldset>
+		</td>
+	</tr>
+	<tr>
+		<td valign="top" width="50%">
+			<fieldset class="atas">
+			<table width="100%" border="0">
+				<tr>
+					<td width="2%">&nbsp;</td>
+					<td><input type="text" name="komponen" id="komponen" size="16%" class="easyui-validatebox" data-options="required:true" value="<?=$komponen?>"/></td>
+					<td><input type="text" name="komponen1" id="komponen1" size="16%" class="easyui-validatebox" value="<?=$komponen1?>"/></td>
+					<td><input type="text" name="komponen2" id="komponen2" size="16%" class="easyui-validatebox" value="<?=$komponen2?>"/></td>
+					<td width="10%">
+						<select class="easyui-combobox " data-options="
+																													required:true,
+																													valueField:'family_id',
+																													textField:'family',
+																													url:'<?php echo site_url(); ?>/ref_json/DataFamily',
+																													onSelect: function(rec){ 
+																														var url = '<?php echo site_url(); ?>/ref_json/DataMaterial1/'+rec.family_id; 
+																														var str=''; 
+																														$('#material').combobox('reload',url);
+																														$('#family > option:selected').each( function(){ 
+																															str = ' ' + $(this).text(); 
+																														}); 
+																														$(this).text(' '+$(this).text()); 
+																													},
+																													filter: function(q,row){
+																														return row.family.toLowerCase().indexOf(q.toLowerCase())==0;
+																													}" 
+								id="family" name="family" style="width:120px;">
+						</select>
+					</td>
+					<td width="20%">
+						<select class="easyui-combobox" data-options="required:true,valueField:'kode_barang',textField:'nama_barang',url:'<?php echo site_url(); ?>/ref_json/DataMaterial1', onSelect: function(rec){ $('#family').combobox('select',rec.family)},filter: function(q,row){return row.nama_barang.toLowerCase().indexOf(q.toLowerCase())==0;}" id="material" name="material" style="width:230px">
+						</select>
+					</td>
+					<td width="2%"><input type="text" name="length" id="length" size="3" readonly="readonly" value="<?=$length?>"/></td>
+					<td width="2%"><input type="text" name="width" id="width" size="3" readonly="readonly" value="<?=$width?>"/></td>
+					<td width="2%"><input type="text" name="height" id="height" size="3" readonly="readonly" value="<?=$height?>"/></td>
+					<td width="5%"><input type="text" name="quantity" id="quantity" size="7" class="easyui-numberbox" data-options="required:true,min:0" style="text-align:right" value="<?=$quantity?>"/></td>
+					<td width="5%"><input type="text" name="mat_waste" id="mat_waste" size="5"  readonly="readonly" value="<?=$mat_waste?>"/></td>
+					<td width="5%"><input type="text" name="comp_waste" id="comp_waste" size="10" class="easyui-numberbox" data-options="min:0,precision:2" style="text-align:right" value="<?=$comp_waste?>"/></td>
+					<td width="4%"></td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
+			<fieldset class="bawah">
+			<table width="100%">
+				<tr>
+					<td colspan="3" align="center">
+						<button type="button" name="simpan" id="simpan" class="easyui-linkbutton" data-options="iconCls:'icon-save'">SIMPAN</button>
+						<a href="<?php echo base_url();?>index.php/cotation/tambah">
+						<button type="button" name="tambah_data" id="tambah_data" class="easyui-linkbutton" data-options="iconCls:'icon-add'">TAMBAH</button>
+						</a>
+						<a href="<?php echo base_url();?>index.php/cotation/">
+						<button type="button" name="kembali" id="kembali" class="easyui-linkbutton" data-options="iconCls:'icon-back'">KEMBALI</button>
+						</a>
+					</td>
+				</tr>
+			</table>  
+			</fieldset>   
+		</td>
+	</tr>
+</table>
+</form>
